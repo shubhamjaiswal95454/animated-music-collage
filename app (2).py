@@ -57,7 +57,16 @@ def apply_effects(clip, effects):
     return clip
 
 def add_light_flare():
-    flare = color_gradient((720, 480), p1=(360, 240), p2=(720, 0), offset=0, shape='radial', col1=([255, 255, 255]), col2=([0, 0, 0]))
+    flare = color_gradient(
+        size=(720, 480),
+        p1=(360, 240),
+        p2=(720, 0),
+        offset=0,
+        shape='radial',
+        col1=[255, 255, 255],
+        col2=[0, 0, 0],
+        vector=None  # ✓ Fix added
+    )
     flare = np.uint8(flare * 255)
     img = Image.fromarray(flare)
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
@@ -121,7 +130,7 @@ def create_text_clip(text, duration):
     img.save(temp_txt.name)
     return mpe.ImageClip(temp_txt.name).set_duration(duration).fadein(1).fadeout(1).set_position("center")
 
-if st.button("🎬 Generate Video") and uploaded_images:
+if st.button("🎨 Generate Video") and uploaded_images:
     total_images = len(uploaded_images)
     image_duration = video_duration / total_images
     all_clips = []
