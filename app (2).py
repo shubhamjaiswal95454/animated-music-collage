@@ -107,7 +107,8 @@ if st.button("🚀 Create My Collage Video"):
                     font = ImageFont.truetype("DejaVuSans-Bold.ttf", 50)
                 except:
                     font = ImageFont.load_default()
-                text_width, text_height = draw.textsize(overlay_text, font=font)
+                bbox = draw.textbbox((0, 0), overlay_text, font=font)
+                text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
                 position = ((txt_img.width - text_width) // 2, 40)
                 draw.text(position, overlay_text, font=font, fill="white")
                 txt_np = np.array(txt_img)
