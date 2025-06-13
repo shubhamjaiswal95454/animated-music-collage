@@ -3,7 +3,7 @@ import tempfile
 from PIL import Image
 import numpy as np
 import moviepy.editor as mpe
-from moviepy.video.fx.all import fadein, resize
+from moviepy.video.fx.all import fadein, resize, slide_in
 import random
 import io
 
@@ -56,25 +56,20 @@ def make_classic_collage(images, size=480):
         canvas.paste(img_t, center, mask=img_t.convert("RGBA"))
     return canvas
 
-def zoom_in_effect(clip, zoom_factor=1.13, duration=2):
-    return clip.resize(lambda t: 1 + (zoom_factor - 1) * t / duration)
-
 def get_transition(img_clip, style, idx, total, d_img, d_anim):
     if style == "No Animation":
         return img_clip.set_duration(d_img)
-    elif style == "Fade In":
-        return fadein(img_clip.set_duration(d_img), duration=d_anim)
-    elif style == "Zoom In":
-        return zoom_in_effect(img_clip.set_duration(d_img), 1.13, d_img)
-    elif style == "Slide Left":
-        # Slide not directly supported; simulate or skip
-        return img_clip.set_duration(d_img)
-    elif style == "Random Per Photo":
-        styles = ["Fade In", "Zoom In", "No Animation"]
+    if style == "Fade In":
+        return img_clip.crossfadein(1).set_duration(d_img)
+    if style == "Zoom In":
+        return img_clip.set_duration(d_img).resize(lambda t: 1 + 0.05*t)
+    if style == "Slide Left":
+        return img_clip.set_duration(d_img).fx(slide_in, 1, 'left')
+    if style == "Random Per Photo":
+        styles = ["Fade In", "Zoom In", "Slide Left", "No Animation"]
         random_style = random.choice(styles)
         return get_transition(img_clip, random_style, idx, total, d_img, d_anim)
-    else:
-        return img_clip.set_duration(d_img)
+    return img_clip.set_duration(d_img)
 
 if st.button("Create Collage Video"):
     if not (2 <= len(uploaded_images) <= 9):
@@ -109,20 +104,26 @@ if st.button("Create Collage Video"):
                 clips.append(anim_clip)
 
             video_clip = mpe.concatenate_videoclips(clips, method="compose").set_duration(duration)
-
             bg_clip = mpe.ImageClip(np.array(collage)).set_duration(duration)
             video_with_bg = mpe.CompositeVideoClip([bg_clip, video_clip.set_position("center")])
+
             if overlay_text.strip():
                 txt_clip = mpe.TextClip(
-                    overlay_text, fontsize=48, color='white', font='Arial-Bold', method='label', align='center')
-                txt_clip = txt_clip.set_position(("center", 30)).set_duration(duration).crossfadein(2).fadeout(2)
+                    overlay_text, fontsize=48, color='white', font='Arial-Bold', method='label', align='center'
+                ).set_position(("center", 30)).set_duration(duration).crossfadein(2).fadeout(2)
                 video_with_bg = mpe.CompositeVideoClip([video_with_bg, txt_clip])
 
-            audio_clip = mpe.AudioFileClip(uploaded_audio.name)
+            # Save uploaded audio to temp file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
+                tmp_audio.write(uploaded_audio.read())
+                audio_path = tmp_audio.name
+
+            audio_clip = mpe.AudioFileClip(audio_path)
             if audio_clip.duration > duration + audio_start:
                 audio_clip = audio_clip.subclip(audio_start, audio_start + duration)
             elif audio_clip.duration > audio_start:
                 audio_clip = audio_clip.subclip(audio_start)
+
             video_final = video_with_bg.set_audio(audio_clip).set_duration(duration)
 
             with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
