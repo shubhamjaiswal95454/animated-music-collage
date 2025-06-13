@@ -102,7 +102,13 @@ if st.button("🚀 Create My Collage Video"):
 
             if overlay_text.strip():
                 txt_clip = mpe.TextClip(
-                    overlay_text, fontsize=50, color='white', font='Arial-Bold', method='label', align='center')
+                    overlay_text,
+                    fontsize=50,
+                    color='white',
+                    method='caption',
+                    size=video_with_bg.size,
+                    align='center'
+                )
                 txt_clip = txt_clip.set_position(("center", 40)).set_duration(duration).crossfadein(2).fadeout(2)
                 video_with_bg = mpe.CompositeVideoClip([video_with_bg, txt_clip])
 
