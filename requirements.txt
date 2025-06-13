@@ -1,6 +1,7 @@
 streamlit
 pandas
 numpy
+moviepy
 matplotlib
 statsmodels
 scikit-learn
@@ -9,4 +10,4 @@ opencv-python-headless
 Pillow
 rembg
 moviepy
-moviepy
+ffmpeg
