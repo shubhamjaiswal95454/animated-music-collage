@@ -64,7 +64,8 @@ def add_light_flare():
         offset=0,
         shape='radial',
         col1=[255, 255, 255],
-        col2=[0, 0, 0]
+        col2=[0, 0, 0],
+        vector=[1, 1]  # Added vector to fix ValueError
     )
     flare = np.uint8(flare * 255)
     img = Image.fromarray(flare)
@@ -73,7 +74,7 @@ def add_light_flare():
     return mpe.ImageClip(tmp.name).set_duration(3).set_opacity(0.3).fadein(1).fadeout(1)
 
 def add_bokeh_overlay():
-    gradient = color_gradient((720, 480), p1=(0, 0), p2=(720, 480), offset=0, shape='linear', col1=[255, 192, 203], col2=[255, 255, 255])
+    gradient = color_gradient((720, 480), p1=(0, 0), p2=(720, 480), offset=0, shape='linear', col1=[255, 192, 203], col2=[255, 255, 255], vector=[1, 1])
     gradient = np.uint8(gradient * 255)
     img = Image.fromarray(gradient)
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
