@@ -7,37 +7,30 @@ from moviepy.video.fx.all import fadein, resize
 import random
 import io
 
-st.set_page_config(page_title="Ultimate Animated Photo Music Collage", layout="centered")
+st.set_page_config(page_title="🎞️ Ultimate Animated Collage Studio", layout="centered")
 
-st.title("🎬 Ultimate Animated Photo Music Collage Maker")
+st.title("🌟 Ultimate Animated Photo Music Collage Maker")
 
-st.write("""
-Upload 2 to 9 images and a song, pick your favorite collage style and animation.
-Get a video with music and beautiful transitions!
+st.markdown("""
+Upload 2 to 9 images and your favorite song. Choose a layout and animation style.
+Create a cinematic collage with music, motion, and magic ✨!
 """)
 
-uploaded_images = st.file_uploader("Upload 2 to 9 images", accept_multiple_files=True, type=['jpg','jpeg','png'])
-uploaded_audio = st.file_uploader("Upload an audio file (mp3/wav)", type=['mp3','wav'])
+uploaded_images = st.file_uploader("📸 Upload 2 to 9 images", accept_multiple_files=True, type=['jpg','jpeg','png'])
+uploaded_audio = st.file_uploader("🎵 Upload a music file (mp3/wav)", type=['mp3','wav'])
 
-duration = st.slider("Video Length (seconds, max 300)", min_value=10, max_value=300, value=60)
-audio_start = st.number_input("Audio Start (seconds)", min_value=0, max_value=300, value=0)
-overlay_text = st.text_input("Optional: Add overlay text/title for your collage video:")
+duration = st.slider("🎬 Video Length (seconds)", min_value=10, max_value=300, value=60)
+audio_start = st.number_input("🔊 Audio Start Time (seconds)", min_value=0, max_value=300, value=0)
+overlay_text = st.text_input("📝 Add a title or message on your collage video:")
 
-collage_style = st.selectbox(
-    "Choose collage layout",
-    ["Auto Grid", "Horizontal Strip", "Vertical Strip", "Classic Collage"]
-)
-
-animation_style = st.selectbox(
-    "Animation for photos",
-    ["Random Per Photo", "Fade In", "Zoom In", "Slide Left", "No Animation"]
-)
+collage_style = st.selectbox("🎨 Choose collage layout", ["Auto Grid", "Horizontal Strip", "Vertical Strip", "Classic Collage"])
+animation_style = st.selectbox("✨ Animation style for photos", ["Random Per Photo", "Fade In", "Zoom In", "Slide Left", "No Animation"])
 
 def make_auto_grid(images, size=480):
     n = len(images)
     cols = int(np.ceil(np.sqrt(n)))
     rows = int(np.ceil(n / cols))
-    grid_img = Image.new("RGB", (cols*size, rows*size), color=(30,30,30))
+    grid_img = Image.new("RGB", (cols*size, rows*size), color=(20,20,20))
     for idx, img in enumerate(images):
         r = idx // cols
         c = idx % cols
@@ -47,8 +40,8 @@ def make_auto_grid(images, size=480):
 
 def make_classic_collage(images, size=480):
     n = len(images)
-    canvas = Image.new("RGB", (size*2, size*2), color=(30,30,30))
-    rotations = [-12, 7, 15, -7, 5, -10, 8, -4, 0]
+    canvas = Image.new("RGB", (size*2, size*2), color=(20,20,20))
+    rotations = [-15, 10, 20, -10, 8, -13, 6, -5, 0]
     for i, img in enumerate(images):
         angle = rotations[i % len(rotations)]
         img_t = img.resize((int(size*1.1), int(size*1.1))).rotate(angle, expand=True)
@@ -62,7 +55,7 @@ def get_transition(img_clip, style, idx, total, d_img, d_anim):
     if style == "Fade In":
         return fadein(img_clip.set_duration(d_img), duration=d_anim)
     if style == "Zoom In":
-        return img_clip.set_duration(d_img).resize(lambda t: 1 + 0.05 * t)
+        return img_clip.set_duration(d_img).resize(lambda t: 1 + 0.07 * t)
     if style == "Slide Left":
         return img_clip.set_duration(d_img).set_position(lambda t: (int(100 * (1 - t)), 'center'))
     if style == "Random Per Photo":
@@ -71,31 +64,31 @@ def get_transition(img_clip, style, idx, total, d_img, d_anim):
         return get_transition(img_clip, random_style, idx, total, d_img, d_anim)
     return img_clip.set_duration(d_img)
 
-if st.button("Create Collage Video"):
+if st.button("🚀 Create My Collage Video"):
     if not (2 <= len(uploaded_images) <= 9):
-        st.error("Upload between 2 and 9 images!")
+        st.error("Please upload between 2 and 9 images!")
     elif not uploaded_audio:
-        st.error("Upload an audio file!")
+        st.error("Please upload a music file!")
     else:
-        with st.spinner("Processing video... (can take a few minutes for long videos)"):
+        with st.spinner("✨ Creating your animated collage..."):
             images = [Image.open(img).convert("RGB") for img in uploaded_images]
             preview_size = 480
 
             if collage_style == "Auto Grid":
                 collage = make_auto_grid(images, size=preview_size)
             elif collage_style == "Horizontal Strip":
-                collage = Image.new("RGB", (preview_size*len(images), preview_size), (30,30,30))
+                collage = Image.new("RGB", (preview_size*len(images), preview_size), (20,20,20))
                 for i,img in enumerate(images):
                     collage.paste(img.resize((preview_size, preview_size)), (i*preview_size, 0))
             elif collage_style == "Vertical Strip":
-                collage = Image.new("RGB", (preview_size, preview_size*len(images)), (30,30,30))
+                collage = Image.new("RGB", (preview_size, preview_size*len(images)), (20,20,20))
                 for i,img in enumerate(images):
                     collage.paste(img.resize((preview_size, preview_size)), (0, i*preview_size))
             else:
                 collage = make_classic_collage(images, size=preview_size)
 
             d_img = duration / len(images)
-            d_anim = min(1.2, d_img)
+            d_anim = min(1.5, d_img)
 
             clips = []
             for idx, img in enumerate(images):
@@ -109,8 +102,8 @@ if st.button("Create Collage Video"):
 
             if overlay_text.strip():
                 txt_clip = mpe.TextClip(
-                    overlay_text, fontsize=48, color='white', font='Arial-Bold', method='label', align='center')
-                txt_clip = txt_clip.set_position(("center", 30)).set_duration(duration).crossfadein(2).fadeout(2)
+                    overlay_text, fontsize=50, color='white', font='Arial-Bold', method='label', align='center')
+                txt_clip = txt_clip.set_position(("center", 40)).set_duration(duration).crossfadein(2).fadeout(2)
                 video_with_bg = mpe.CompositeVideoClip([video_with_bg, txt_clip])
 
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_audio:
@@ -132,14 +125,14 @@ if st.button("Create Collage Video"):
             st.video(temp_filename)
             with open(temp_filename, 'rb') as fp:
                 st.download_button(
-                    label="⬇️ Download Video Collage",
+                    label="⬇️ Download Your Stylish Collage Video",
                     data=fp,
-                    file_name="collage_video.mp4",
+                    file_name="animated_collage_video.mp4",
                     mime="video/mp4"
                 )
 
-            st.success("Done! Enjoy your professional collage video! 🎉")
+            st.success("Your cinematic collage is ready! 🎉")
             st.markdown(
-                "<div style='color:red; font-size:16px;'>⚠️ This is an AI-created collage animation; results may be artistically and musically unpredictable.</div>",
+                "<div style='color:#ff4d4f; font-size:16px;'>⚠️ Generated video may have stylistic randomness due to AI enhancements.</div>",
                 unsafe_allow_html=True
             )
