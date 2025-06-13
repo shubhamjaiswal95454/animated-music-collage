@@ -11,3 +11,5 @@ Pillow
 rembg
 moviepy
 ffmpeg
+imageio==2.34.0
+imageio-ffmpeg
