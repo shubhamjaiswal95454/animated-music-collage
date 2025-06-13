@@ -3,6 +3,8 @@ import tempfile
 from PIL import Image
 import numpy as np
 import moviepy.editor as mpe
+from moviepy.video.fx import zoom_in
+from moviepy.video.fx import fadein, fadeout, rotate
 import random
 import io
 
