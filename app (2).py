@@ -1,6 +1,6 @@
 import streamlit as st
 import tempfile
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import moviepy.editor as mpe
 from moviepy.video.fx.all import fadein, resize
@@ -101,16 +101,19 @@ if st.button("🚀 Create My Collage Video"):
             video_with_bg = mpe.CompositeVideoClip([bg_clip, video_clip.set_position("center")])
 
             if overlay_text.strip():
-                txt_clip = mpe.TextClip(
-                    overlay_text,
-                    fontsize=50,
-                    color='white',
-                    method='caption',
-                    size=video_with_bg.size,
-                    align='center'
-                )
-                txt_clip = txt_clip.set_position(("center", 40)).set_duration(duration).crossfadein(2).fadeout(2)
-                video_with_bg = mpe.CompositeVideoClip([video_with_bg, txt_clip])
+                txt_img = Image.new("RGBA", video_with_bg.size, (0, 0, 0, 0))
+                draw = ImageDraw.Draw(txt_img)
+                try:
+                    font = ImageFont.truetype("DejaVuSans-Bold.ttf", 50)
+                except:
+                    font = ImageFont.load_default()
+                text_width, text_height = draw.textsize(overlay_text, font=font)
+                position = ((txt_img.width - text_width) // 2, 40)
+                draw.text(position, overlay_text, font=font, fill="white")
+                txt_np = np.array(txt_img)
+                text_clip = mpe.ImageClip(txt_np, ismask=False).set_duration(duration)
+                text_clip = text_clip.set_position(("center", "top")).crossfadein(2).fadeout(2)
+                video_with_bg = mpe.CompositeVideoClip([video_with_bg, text_clip])
 
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_audio:
                 tmp_audio.write(uploaded_audio.read())
