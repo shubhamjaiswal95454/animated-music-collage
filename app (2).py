@@ -65,7 +65,7 @@ def add_light_flare():
         shape='radial',
         col1=[255, 255, 255],
         col2=[0, 0, 0],
-        vector=[1, 1]  # Added vector to fix ValueError
+        vector=None  # Fixed: radial gradients shouldn't use vector
     )
     flare = np.uint8(flare * 255)
     img = Image.fromarray(flare)
