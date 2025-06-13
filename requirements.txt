@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+matplotlib
+statsmodels
+scikit-learn
+streamlit
+opencv-python-headless
+Pillow
+rembg
