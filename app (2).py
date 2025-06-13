@@ -57,7 +57,7 @@ def apply_effects(clip, effects):
     return clip
 
 def add_light_flare():
-    flare = color_gradient(
+    flare_array = color_gradient(
         size=(720, 480),
         p1=(360, 240),
         p2=(720, 0),
@@ -66,8 +66,11 @@ def add_light_flare():
         col1=[255, 255, 255],
         col2=[0, 0, 0]
     )
-    flare = np.uint8(flare * 255)
-    img = Image.fromarray(flare)
+
+    if flare_array.dtype != np.uint8:
+        flare_array = np.uint8(flare_array * 255)
+
+    img = Image.fromarray(flare_array)
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
     img.save(tmp.name)
     return mpe.ImageClip(tmp.name).set_duration(3).set_opacity(0.3).fadein(1).fadeout(1)
