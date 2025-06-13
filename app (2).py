@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import moviepy.editor as mpe
 from moviepy.video.fx.all import fadein, fadeout, resize, crop, mirror_x, mirror_y, blackwhite, rotate
+from moviepy.video.tools.drawing import color_gradient
 import random
 import io
 
@@ -37,8 +38,31 @@ def theme_to_style(theme):
 
 def apply_effects(clip, effects):
     for effect in effects:
-        clip = effect(clip)
+        if effect == fadein:
+            clip = clip.fx(fadein, 1)
+        elif effect == fadeout:
+            clip = clip.fx(fadeout, 1)
+        elif effect == resize:
+            clip = clip.fx(resize, 1.1)
+        elif effect == crop:
+            clip = clip.fx(crop, x1=50, y1=50, x2=670, y2=430)
+        elif effect == rotate:
+            clip = clip.fx(rotate, 5)
+        elif effect == mirror_x:
+            clip = clip.fx(mirror_x)
+        elif effect == mirror_y:
+            clip = clip.fx(mirror_y)
+        elif effect == blackwhite:
+            clip = clip.fx(blackwhite)
     return clip
+
+def add_light_flare():
+    flare = color_gradient((720, 480), p1=(360, 240), p2=(720, 0), offset=0, shape='radial', col1=([255, 255, 255]), col2=([0, 0, 0]))
+    flare = np.uint8(flare * 255)
+    img = Image.fromarray(flare)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    img.save(tmp.name)
+    return mpe.ImageClip(tmp.name).set_duration(3).set_opacity(0.3).fadein(1).fadeout(1)
 
 def get_animated_clip(image_file, effects, duration):
     image = Image.open(image_file).convert('RGB')
@@ -47,7 +71,8 @@ def get_animated_clip(image_file, effects, duration):
     image.save(temp_file.name)
     clip = mpe.ImageClip(temp_file.name).set_duration(duration)
     clip = apply_effects(clip, effects)
-    return clip
+    overlay = add_light_flare()
+    return mpe.CompositeVideoClip([clip, overlay.set_position("center")])
 
 def create_text_clip(text, duration):
     font = ImageFont.truetype("DejaVuSans-Bold.ttf", 60)
@@ -57,21 +82,21 @@ def create_text_clip(text, duration):
     draw.text(((720-w)/2, (120-h)/2), text, font=font, fill="white")
     temp_txt = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
     img.save(temp_txt.name)
-    return mpe.ImageClip(temp_txt.name).set_duration(duration).fadein(1).fadeout(1)
+    return mpe.ImageClip(temp_txt.name).set_duration(duration).fadein(1).fadeout(1).set_position("center")
 
 if st.button("🎬 Generate Video") and uploaded_images:
     total_images = len(uploaded_images)
     image_duration = video_duration / total_images
     all_clips = []
 
+    if overlay_text:
+        text_clip = create_text_clip(overlay_text, duration=4)
+        all_clips.append(text_clip)
+
     for img in uploaded_images:
         effects = theme_to_style(selected_theme)
         animated = get_animated_clip(img, effects, image_duration)
         all_clips.append(animated)
-
-    if overlay_text:
-        text_clip = create_text_clip(overlay_text, duration=4)
-        all_clips.insert(0, text_clip)
 
     final_video = mpe.concatenate_videoclips(all_clips, method="compose")
 
