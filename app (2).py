@@ -64,8 +64,8 @@ def add_light_flare():
         offset=0,
         shape='radial',
         col1=[255, 255, 255],
-        col2=[0, 0, 0],
-        vector=None  # Fixed to avoid ambiguous truth value error
+        col2=[0, 0, 0]
+        # vector parameter REMOVED!
     )
 
     if flare_array.dtype != np.uint8:
@@ -124,7 +124,10 @@ def get_animated_clip(image_file, effects, duration):
     return mpe.CompositeVideoClip(overlays)
 
 def create_text_clip(text, duration):
-    font = ImageFont.truetype("DejaVuSans-Bold.ttf", 60)
+    try:
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 60)
+    except:
+        font = ImageFont.load_default()
     img = Image.new("RGBA", (720, 120), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     w, h = draw.textsize(text, font=font)
