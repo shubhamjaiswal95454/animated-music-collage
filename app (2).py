@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import moviepy.editor as mpe
 from moviepy.video.fx import zoom_in
-from moviepy.video.fx import fadein, fadeout, rotate
+from moviepy.video.fx.all import zoom_in, fadein, resize
 import random
 import io
 
