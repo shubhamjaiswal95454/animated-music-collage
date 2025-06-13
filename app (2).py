@@ -35,7 +35,6 @@ animation_style = st.selectbox(
 
 def make_auto_grid(images, size=480):
     n = len(images)
-    # determine grid size (square or as close as possible)
     cols = int(np.ceil(np.sqrt(n)))
     rows = int(np.ceil(n / cols))
     grid_img = Image.new("RGB", (cols*size, rows*size), color=(30,30,30))
@@ -47,11 +46,9 @@ def make_auto_grid(images, size=480):
     return grid_img
 
 def make_classic_collage(images, size=480):
-    # Puts images at angles/corners over a canvas, for "collage" feeling
     n = len(images)
     canvas = Image.new("RGB", (size*2, size*2), color=(30,30,30))
     rotations = [-12, 7, 15, -7, 5, -10, 8, -4, 0]
-    centers = [(size//2, size//2), (size*3//2, size//2), (size//2, size*3//2), (size*3//2, size*3//2)]
     for i, img in enumerate(images):
         angle = rotations[i % len(rotations)]
         img_t = img.resize((int(size*1.1), int(size*1.1))).rotate(angle, expand=True)
@@ -59,23 +56,25 @@ def make_classic_collage(images, size=480):
         canvas.paste(img_t, center, mask=img_t.convert("RGBA"))
     return canvas
 
+def zoom_in_effect(clip, zoom_factor=1.13, duration=2):
+    return clip.resize(lambda t: 1 + (zoom_factor - 1) * t / duration)
+
 def get_transition(img_clip, style, idx, total, d_img, d_anim):
     if style == "No Animation":
         return img_clip.set_duration(d_img)
-    if style == "Fade In":
-        return img_clip.crossfadein(1).set_duration(d_img)
-    if style == "Zoom In":
-        return img_clip.set_duration(d_img).fx(mpe.vfx.zoomIn, 1.13)
-    if style == "Slide Left":
-        w, h = img_clip.size
-        move_clip = img_clip.set_duration(d_img).fx(mpe.vfx.slide_in, 1, 'left')
-        return move_clip
-    if style == "Random Per Photo":
-        styles = ["Fade In", "Zoom In", "Slide Left", "No Animation"]
+    elif style == "Fade In":
+        return fadein(img_clip.set_duration(d_img), duration=d_anim)
+    elif style == "Zoom In":
+        return zoom_in_effect(img_clip.set_duration(d_img), 1.13, d_img)
+    elif style == "Slide Left":
+        # Slide not directly supported; simulate or skip
+        return img_clip.set_duration(d_img)
+    elif style == "Random Per Photo":
+        styles = ["Fade In", "Zoom In", "No Animation"]
         random_style = random.choice(styles)
         return get_transition(img_clip, random_style, idx, total, d_img, d_anim)
-    # default
-    return img_clip.set_duration(d_img)
+    else:
+        return img_clip.set_duration(d_img)
 
 if st.button("Create Collage Video"):
     if not (2 <= len(uploaded_images) <= 9):
@@ -84,11 +83,9 @@ if st.button("Create Collage Video"):
         st.error("Upload an audio file!")
     else:
         with st.spinner("Processing video... (can take a few minutes for long videos)"):
-            # Step 1: Load/prepare images
             images = [Image.open(img).convert("RGB") for img in uploaded_images]
             preview_size = 480
 
-            # Step 2: Make background collage image
             if collage_style == "Auto Grid":
                 collage = make_auto_grid(images, size=preview_size)
             elif collage_style == "Horizontal Strip":
@@ -102,9 +99,8 @@ if st.button("Create Collage Video"):
             else:
                 collage = make_classic_collage(images, size=preview_size)
 
-            # Step 3: Make video transitions for each image
             d_img = duration / len(images)
-            d_anim = min(1.2, d_img)   # duration of animation per img
+            d_anim = min(1.2, d_img)
 
             clips = []
             for idx, img in enumerate(images):
@@ -113,8 +109,7 @@ if st.button("Create Collage Video"):
                 clips.append(anim_clip)
 
             video_clip = mpe.concatenate_videoclips(clips, method="compose").set_duration(duration)
-            
-            # Step 4: Overlay collage background and (optional) overlay text
+
             bg_clip = mpe.ImageClip(np.array(collage)).set_duration(duration)
             video_with_bg = mpe.CompositeVideoClip([bg_clip, video_clip.set_position("center")])
             if overlay_text.strip():
@@ -123,19 +118,17 @@ if st.button("Create Collage Video"):
                 txt_clip = txt_clip.set_position(("center", 30)).set_duration(duration).crossfadein(2).fadeout(2)
                 video_with_bg = mpe.CompositeVideoClip([video_with_bg, txt_clip])
 
-            # Step 5: Add/crop audio
             audio_clip = mpe.AudioFileClip(uploaded_audio.name)
-            if audio_clip.duration > duration+audio_start:
-                audio_clip = audio_clip.subclip(audio_start, audio_start+duration)
+            if audio_clip.duration > duration + audio_start:
+                audio_clip = audio_clip.subclip(audio_start, audio_start + duration)
             elif audio_clip.duration > audio_start:
                 audio_clip = audio_clip.subclip(audio_start)
             video_final = video_with_bg.set_audio(audio_clip).set_duration(duration)
 
-            # Step 6: Export video (to temp file)
             with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
                 video_final.write_videofile(temp_file.name, fps=24, codec="libx264", audio_codec="aac")
                 temp_filename = temp_file.name
-            
+
             st.video(temp_filename)
             with open(temp_filename, 'rb') as fp:
                 st.download_button(
