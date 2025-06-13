@@ -64,7 +64,8 @@ def add_light_flare():
         offset=0,
         shape='radial',
         col1=[255, 255, 255],
-        col2=[0, 0, 0]
+        col2=[0, 0, 0],
+        vector=[0, 0]  # Fixed to avoid ambiguous truth value error
     )
 
     if flare_array.dtype != np.uint8:
@@ -158,4 +159,4 @@ if st.button("🎨 Generate Video") and uploaded_images:
     st.success("✅ Video created successfully!")
     st.video(temp_out.name)
 else:
-    st.info("👆 Upload images and optionally audio, then click Generate Video.")
+    st.info("👇 Upload images and optionally audio, then click Generate Video.")
