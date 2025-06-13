@@ -10,7 +10,7 @@ import io
 
 st.set_page_config(page_title="✨ Pro Video Story Creator", layout="centered")
 
-st.title("🎞️ Pro Cinematic Photo Video Maker")
+st.title("🎮 Pro Cinematic Photo Video Maker")
 
 st.markdown("""
 Create a **professional-looking cinematic video** from your images. Add a soundtrack, choose elegant animations, overlays, and cinematic transitions.
@@ -23,8 +23,8 @@ video_duration = st.slider("⏱️ Total Video Duration", 10, 180, 60)
 audio_start = st.number_input("🔊 Start Music At (seconds)", 0, 180, 0)
 overlay_text = st.text_input("📝 Optional Title or Quote")
 
-# Theme selector
 selected_theme = st.selectbox("🎭 Choose a Theme", ["Romantic", "Action", "Retro", "Elegant", "Dynamic"])
+selected_overlays = st.multiselect("✨ Add Overlays", ["Sparkles", "Bokeh", "Light Flare", "Grain"], default=["Light Flare"])
 
 def theme_to_style(theme):
     theme_styles = {
@@ -64,6 +64,32 @@ def add_light_flare():
     img.save(tmp.name)
     return mpe.ImageClip(tmp.name).set_duration(3).set_opacity(0.3).fadein(1).fadeout(1)
 
+def add_bokeh_overlay():
+    gradient = color_gradient((720, 480), p1=(0, 0), p2=(720, 480), offset=0, shape='linear', col1=[255, 192, 203], col2=[255, 255, 255], vector=None)
+    gradient = np.uint8(gradient * 255)
+    img = Image.fromarray(gradient)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    img.save(tmp.name)
+    return mpe.ImageClip(tmp.name).set_duration(3).set_opacity(0.2).fadein(1).fadeout(1)
+
+def add_grain_overlay():
+    grain = np.random.randint(0, 50, (480, 720), dtype=np.uint8)
+    img = Image.fromarray(grain).convert("L").convert("RGB")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    img.save(tmp.name)
+    return mpe.ImageClip(tmp.name).set_duration(3).set_opacity(0.15)
+
+def add_sparkle_overlay():
+    spark = Image.new("RGBA", (720, 480), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(spark)
+    for _ in range(50):
+        x, y = random.randint(0, 720), random.randint(0, 480)
+        r = random.randint(1, 3)
+        draw.ellipse((x - r, y - r, x + r, y + r), fill="white")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    spark.save(tmp.name)
+    return mpe.ImageClip(tmp.name).set_duration(3).set_opacity(0.4).fadein(1).fadeout(1)
+
 def get_animated_clip(image_file, effects, duration):
     image = Image.open(image_file).convert('RGB')
     image = image.resize((720, 480))
@@ -71,15 +97,26 @@ def get_animated_clip(image_file, effects, duration):
     image.save(temp_file.name)
     clip = mpe.ImageClip(temp_file.name).set_duration(duration)
     clip = apply_effects(clip, effects)
-    overlay = add_light_flare()
-    return mpe.CompositeVideoClip([clip, overlay.set_position("center")])
+
+    overlays = [clip]
+
+    if "Light Flare" in selected_overlays:
+        overlays.append(add_light_flare().set_position("center"))
+    if "Sparkles" in selected_overlays:
+        overlays.append(add_sparkle_overlay().set_position("center"))
+    if "Bokeh" in selected_overlays:
+        overlays.append(add_bokeh_overlay().set_position("center"))
+    if "Grain" in selected_overlays:
+        overlays.append(add_grain_overlay().set_position("center"))
+
+    return mpe.CompositeVideoClip(overlays)
 
 def create_text_clip(text, duration):
     font = ImageFont.truetype("DejaVuSans-Bold.ttf", 60)
     img = Image.new("RGBA", (720, 120), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     w, h = draw.textsize(text, font=font)
-    draw.text(((720-w)/2, (120-h)/2), text, font=font, fill="white")
+    draw.text(((720 - w) / 2, (120 - h) / 2), text, font=font, fill="white")
     temp_txt = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
     img.save(temp_txt.name)
     return mpe.ImageClip(temp_txt.name).set_duration(duration).fadein(1).fadeout(1).set_position("center")
