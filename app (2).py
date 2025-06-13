@@ -65,7 +65,7 @@ def add_light_flare():
         shape='radial',
         col1=[255, 255, 255],
         col2=[0, 0, 0],
-        vector=[0, 0]  # Fixed to avoid ambiguous truth value error
+        vector=None  # Fixed to avoid ambiguous truth value error
     )
 
     if flare_array.dtype != np.uint8:
