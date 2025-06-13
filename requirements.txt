@@ -1,7 +1,7 @@
 streamlit
+moviepy
 pandas
 numpy
-moviepy
 matplotlib
 statsmodels
 scikit-learn
