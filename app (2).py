@@ -3,13 +3,13 @@ import tempfile
 from PIL import Image
 import numpy as np
 import moviepy.editor as mpe
-from moviepy.video.fx.all import fadein, resize, slide_in
+from moviepy.video.fx.all import fadein, resize, SlideIn
 import random
 import io
 
 st.set_page_config(page_title="Ultimate Animated Photo Music Collage", layout="centered")
 
-st.title("🎬 Ultimate Animated Photo Music Collage Maker")
+st.title("🎮 Ultimate Animated Photo Music Collage Maker")
 
 st.write("""
 Upload 2 to 9 images and a song, pick your favorite collage style and animation.
@@ -62,9 +62,9 @@ def get_transition(img_clip, style, idx, total, d_img, d_anim):
     if style == "Fade In":
         return img_clip.crossfadein(1).set_duration(d_img)
     if style == "Zoom In":
-        return img_clip.set_duration(d_img).resize(lambda t: 1 + 0.05*t)
+        return img_clip.set_duration(d_img).fx(mpe.vfx.zoomIn, 1.13)
     if style == "Slide Left":
-        return img_clip.set_duration(d_img).fx(slide_in, 1, 'left')
+        return img_clip.set_duration(d_img).fx(SlideIn, d_anim, 'left')
     if style == "Random Per Photo":
         styles = ["Fade In", "Zoom In", "Slide Left", "No Animation"]
         random_style = random.choice(styles)
@@ -106,27 +106,23 @@ if st.button("Create Collage Video"):
             video_clip = mpe.concatenate_videoclips(clips, method="compose").set_duration(duration)
             bg_clip = mpe.ImageClip(np.array(collage)).set_duration(duration)
             video_with_bg = mpe.CompositeVideoClip([bg_clip, video_clip.set_position("center")])
-
             if overlay_text.strip():
                 txt_clip = mpe.TextClip(
-                    overlay_text, fontsize=48, color='white', font='Arial-Bold', method='label', align='center'
-                ).set_position(("center", 30)).set_duration(duration).crossfadein(2).fadeout(2)
+                    overlay_text, fontsize=48, color='white', font='Arial-Bold', method='label', align='center')
+                txt_clip = txt_clip.set_position(("center", 30)).set_duration(duration).crossfadein(2).fadeout(2)
                 video_with_bg = mpe.CompositeVideoClip([video_with_bg, txt_clip])
 
-            # Save uploaded audio to temp file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
-                tmp_audio.write(uploaded_audio.read())
-                audio_path = tmp_audio.name
-
-            audio_clip = mpe.AudioFileClip(audio_path)
-            if audio_clip.duration > duration + audio_start:
-                audio_clip = audio_clip.subclip(audio_start, audio_start + duration)
-            elif audio_clip.duration > audio_start:
-                audio_clip = audio_clip.subclip(audio_start)
-
-            video_final = video_with_bg.set_audio(audio_clip).set_duration(duration)
-
             with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
+                audio_bytes = uploaded_audio.read()
+                with open(temp_file.name + ".audio", "wb") as audio_file:
+                    audio_file.write(audio_bytes)
+
+                audio_clip = mpe.AudioFileClip(temp_file.name + ".audio")
+                if audio_clip.duration > duration+audio_start:
+                    audio_clip = audio_clip.subclip(audio_start, audio_start+duration)
+                elif audio_clip.duration > audio_start:
+                    audio_clip = audio_clip.subclip(audio_start)
+                video_final = video_with_bg.set_audio(audio_clip).set_duration(duration)
                 video_final.write_videofile(temp_file.name, fps=24, codec="libx264", audio_codec="aac")
                 temp_filename = temp_file.name
 
