@@ -9,3 +9,4 @@ opencv-python-headless
 Pillow
 rembg
 moviepy
+moviepy
